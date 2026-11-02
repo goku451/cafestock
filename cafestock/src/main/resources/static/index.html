@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CafeStock - Menú & Pedidos en Línea</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <style>
+        :root {
+            --cafe-dark: #2c1a0e;
+            --cafe-medium: #543d2b;
+            --cafe-gold: #c89666;
+            --cafe-light: #f7f3ee;
+            --cafe-accent: #b85d19;
+        }
+
+        body {
+            background-color: #fbf9f6;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #333;
+        }
+
+        .navbar-cafe {
+            background-color: var(--cafe-dark);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .hero-banner {
+            background: linear-gradient(135deg, var(--cafe-dark) 0%, var(--cafe-medium) 100%);
+            color: #fff;
+            padding: 3rem 1rem;
+            border-radius: 1rem;
+            margin-bottom: 2.5rem;
+            box-shadow: 0 8px 24px rgba(44, 26, 14, 0.2);
+        }
+
+        .product-card {
+            border: 1px solid #eae5df;
+            border-radius: 1rem;
+            background: #fff;
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .product-card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 12px 24px rgba(44, 26, 14, 0.12);
+            border-color: var(--cafe-gold);
+        }
+
+        .product-card.agotado {
+            opacity: 0.65;
+            background-color: #fdfdfd;
+            filter: grayscale(40%);
+        }
+
+        .badge-category {
+            background-color: #f1e7dd;
+            color: var(--cafe-dark);
+            font-weight: 600;
+            font-size: 0.8rem;
+            padding: 0.35rem 0.65rem;
+            border-radius: 20px;
+        }
+
+        .price-tag {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--cafe-accent);
+        }
+
+        .btn-cafe {
+            background-color: var(--cafe-accent);
+            border-color: var(--cafe-accent);
+            color: #fff;
+            font-weight: 600;
+            border-radius: 0.6rem;
+            padding: 0.6rem 1rem;
+            transition: all 0.2s;
+        }
+
+        .btn-cafe:hover {
+            background-color: #9c4c11;
+            border-color: #9c4c11;
+            color: #fff;
+            transform: scale(1.02);
+        }
+
+        .filter-btn.active {
+            background-color: var(--cafe-dark) !important;
+            color: #fff !important;
+            border-color: var(--cafe-dark) !important;
+        }
+
+        .qty-btn {
+            width: 42px;
+            height: 42px;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 0.5rem;
+        }
+
+        .stock-pill {
+            font-size: 0.82rem;
+            padding: 0.25rem 0.6rem;
+            border-radius: 12px;
+        }
+    </style>
+</head>
+<body>
+
+<!-- Navbar -->
+<nav class="navbar navbar-expand-lg navbar-cafe navbar-dark sticky-top">
+    <div class="container">
+        <a class="navbar-brand fw-bold d-flex align-items-center" href="index.html">
+            <span class="fs-3 me-2">☕</span>
+            <span>Cafe<span style="color: var(--cafe-gold);">Stock</span></span>
+        </a>
+        <div class="d-flex align-items-center gap-2">
+            <a href="login.html" class="btn btn-outline-light btn-sm px-3">
+                <i class="bi bi-shield-lock me-1"></i> Panel Admin
+            </a>
+        </div>
+    </div>
+</nav>
+
+<div class="container my-4">
+    <!-- Hero Banner -->
+    <div class="hero-banner text-center">
+        <h1 class="display-5 fw-bold mb-2">Menú de Especialidades</h1>
+        <p class="lead mb-4 text-white-50">Granos selectos, repostería fresca y bebidas artesanales listas para ordenar</p>
+        
+        <!-- Search bar -->
+        <div class="row justify-content-center">
+            <div class="col-md-6 col-sm-10">
+                <div class="input-group input-group-lg shadow-sm">
+                    <span class="input-group-text bg-white border-0 text-muted"><i class="bi bi-search"></i></span>
+                    <input type="text" id="searchInput" class="form-control border-0" placeholder="Buscar producto por nombre o categoría...">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Category Filters -->
+    <div class="d-flex flex-wrap gap-2 justify-content-center mb-4" id="categoryFilters">
+        <button class="btn btn-outline-secondary filter-btn active" data-category="ALL">Todos</button>
+        <button class="btn btn-outline-secondary filter-btn" data-category="Bebidas Calientes">Bebidas Calientes</button>
+        <button class="btn btn-outline-secondary filter-btn" data-category="Bebidas Frías">Bebidas Frías</button>
+        <button class="btn btn-outline-secondary filter-btn" data-category="Postres">Postres & Panadería</button>
+    </div>
+
+    <!-- Loading Spinner -->
+    <div id="loadingSpinner" class="text-center py-5">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Cargando...</span>
+        </div>
+        <p class="text-muted mt-2">Cargando productos del menú...</p>
+    </div>
+
+    <!-- Product Grid -->
+    <div class="row g-4" id="menu-container" style="display: none;">
+        <!-- Se llena dinámicamente con JavaScript -->
+    </div>
+</div>
+
+<!-- ============================================== -->
+<!-- MODAL DE PEDIDO (PANTALLA DE PEDIDO AL USUARIO) -->
+<!-- ============================================== -->
+<div class="modal fade" id="orderModal" tabindex="-1" aria-labelledby="orderModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content shadow-lg border-0" style="border-radius: 1rem; overflow: hidden;">
+            <div class="modal-header bg-dark text-white">
+                <h5 class="modal-title fw-bold" id="orderModalLabel">
+                    <i class="bi bi-cup-hot me-2 text-warning"></i> Realizar Pedido
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <!-- Info del Producto -->
+                <div class="d-flex justify-content-between align-items-start mb-3 pb-3 border-bottom">
+                    <div>
+                        <h4 class="fw-bold mb-1" id="modalProdNombre">Café Americano</h4>
+                        <span class="badge bg-secondary" id="modalProdCategoria">Bebidas</span>
+                    </div>
+                    <div class="text-end">
+                        <small class="text-muted d-block">Precio unitario</small>
+                        <span class="fs-4 fw-bold text-success" id="modalProdPrecio">$0.00</span>
+                    </div>
+                </div>
+
+                <!-- Stock Disponible -->
+                <div class="alert alert-info py-2 d-flex align-items-center justify-content-between mb-3" id="modalStockAlert">
+                    <span><i class="bi bi-box-seam me-1"></i> Stock disponible:</span>
+                    <strong id="modalStockText">0 unid</strong>
+                </div>
+
+                <!-- Mensaje de Error si no hay stock suficiente -->
+                <div class="alert alert-danger py-2 d-none" id="modalErrorAlert">
+                    <i class="bi bi-exclamation-triangle-fill me-1"></i>
+                    <span id="modalErrorMsg">No hay stock disponible.</span>
+                </div>
+
+                <!-- Formulario de Pedido -->
+                <form id="orderForm">
+                    <!-- Selector de Cantidad -->
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">¿Cuántos deseas pedir?</label>
+                        <div class="d-flex align-items-center justify-content-center gap-3">
+                            <button type="button" class="btn btn-outline-secondary qty-btn fw-bold" id="btnMinus">-</button>
+                            <input type="number" id="orderQty" class="form-control text-center fw-bold fs-4" style="max-width: 100px;" value="1" min="1">
+                            <button type="button" class="btn btn-outline-secondary qty-btn fw-bold" id="btnPlus">+</button>
+                        </div>
+                    </div>
+
+                    <!-- Datos del Cliente (Opcional) -->
+                    <div class="mb-3">
+                        <label for="orderClient" class="form-label fw-semibold">Tu Nombre o Número de Mesa <small class="text-muted">(opcional)</small></label>
+                        <input type="text" class="form-control" id="orderClient" placeholder="Ej: Mesa 4 / Sofía Gómez" maxlength="80">
+                    </div>
+
+                    <!-- Notas del pedido -->
+                    <div class="mb-3">
+                        <label for="orderNotes" class="form-label fw-semibold">Notas especiales <small class="text-muted">(opcional)</small></label>
+                        <input type="text" class="form-control" id="orderNotes" placeholder="Ej: Sin azúcar, para llevar, etc." maxlength="150">
+                    </div>
+
+                    <!-- Resumen del Total -->
+                    <div class="p-3 bg-light rounded-3 mb-3 d-flex justify-content-between align-items-center border">
+                        <span class="fs-5 fw-bold text-dark">Total a Pagar:</span>
+                        <span class="fs-3 fw-bolder text-primary" id="orderTotal">$0.00</span>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-cafe btn-lg fw-bold" id="btnConfirmOrder">
+                            <i class="bi bi-check-circle me-1"></i> Confirmar Pedido
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================== -->
+<!-- MODAL DE ÉXITO TRAS PEDIDO CONFIRMADO -->
+<!-- ============================================== -->
+<div class="modal fade" id="orderSuccessModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content text-center p-4 shadow-lg border-0" style="border-radius: 1rem;">
+            <div class="my-3">
+                <span class="display-3 text-success">
+                    <i class="bi bi-check-circle-fill"></i>
+                </span>
+            </div>
+            <h3 class="fw-bold mb-2">¡Pedido Realizado con Éxito!</h3>
+            <p class="text-muted mb-3" id="successModalMsg">
+                Tu orden ha sido enviada al barista y el inventario ha sido actualizado automáticamente.
+            </p>
+            <div class="p-3 bg-light rounded text-start mb-3 border">
+                <div class="d-flex justify-content-between mb-1">
+                    <span class="text-muted">Orden #:</span>
+                    <strong id="successOrderId">-</strong>
+                </div>
+                <div class="d-flex justify-content-between mb-1">
+                    <span class="text-muted">Producto:</span>
+                    <strong id="successOrderProduct">-</strong>
+                </div>
+                <div class="d-flex justify-content-between mb-1">
+                    <span class="text-muted">Cantidad:</span>
+                    <strong id="successOrderQty">-</strong>
+                </div>
+                <div class="d-flex justify-content-between border-top pt-1 mt-1">
+                    <span class="fw-bold">Total:</span>
+                    <strong class="text-success fs-5" id="successOrderTotal">-</strong>
+                </div>
+            </div>
+            <button type="button" class="btn btn-primary w-100 py-2 fw-bold" data-bs-dismiss="modal">
+                Aceptar
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Bootstrap 5 JS Bundle -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+    let allProducts = [];
+    let currentCategory = 'ALL';
+    let currentSelectedProduct = null;
+    let orderModalInstance = null;
+    let successModalInstance = null;
+
+    document.addEventListener('DOMContentLoaded', () => {
+        orderModalInstance = new bootstrap.Modal(document.getElementById('orderModal'));
+        successModalInstance = new bootstrap.Modal(document.getElementById('orderSuccessModal'));
+
+        loadMenu();
+
+        // Search listener
+        document.getElementById('searchInput').addEventListener('input', renderProducts);
+
+        // Category filter listeners
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                e.target.classList.add('active');
+                currentCategory = e.target.getAttribute('data-category');
+                renderProducts();
+            });
+        });
+
+        // Quantity buttons
+        document.getElementById('btnMinus').addEventListener('click', () => {
+            const input = document.getElementById('orderQty');
+            let val = parseInt(input.value) || 1;
+            if (val > 1) {
+                input.value = val - 1;
+                updateOrderTotal();
+            }
+        });
+
+        document.getElementById('btnPlus').addEventListener('click', () => {
+            const input = document.getElementById('orderQty');
+            let val = parseInt(input.value) || 1;
+            const max = currentSelectedProduct && currentSelectedProduct.insumo ? Math.floor(currentSelectedProduct.insumo.stockActual) : 99;
+            if (val < max) {
+                input.value = val + 1;
+                updateOrderTotal();
+            } else {
+                showModalError(`No puedes pedir más de ${max} unidades (límite de stock).`);
+            }
+        });
+
+        document.getElementById('orderQty').addEventListener('input', () => {
+            updateOrderTotal();
+        });
+
+        // Form Submit
+        document.getElementById('orderForm').addEventListener('submit', submitOrder);
+
+        // Auto-refresh menu every 8 seconds for live stock
+        setInterval(loadMenu, 8000);
+    });
+
+    async function loadMenu() {
+        try {
+            const response = await fetch('/api/productos');
+            if (!response.ok) throw new Error('Error al consultar productos');
+            allProducts = await response.json();
+            
+            document.getElementById('loadingSpinner').style.display = 'none';
+            document.getElementById('menu-container').style.display = 'flex';
+            renderProducts();
+        } catch (error) {
+            console.error('Error al cargar el menú:', error);
+            document.getElementById('loadingSpinner').innerHTML = `
+                <div class="alert alert-danger d-inline-block">
+                    <i class="bi bi-exclamation-triangle me-1"></i> No se pudo cargar el menú. Revisa la conexión con el servidor.
+                </div>
+            `;
+        }
+    }
+
+    function renderProducts() {
+        const query = document.getElementById('searchInput').value.trim().toLowerCase();
+        const container = document.getElementById('menu-container');
+
+        let filtered = allProducts.filter(p => {
+            const matchesCategory = (currentCategory === 'ALL') || (p.categoria && p.categoria.toLowerCase().includes(currentCategory.toLowerCase()));
+            const matchesQuery = (!query) || 
+                (p.nombre && p.nombre.toLowerCase().includes(query)) ||
+                (p.categoria && p.categoria.toLowerCase().includes(query));
+            return matchesCategory && matchesQuery;
+        });
+
+        if (filtered.length === 0) {
+            container.innerHTML = `
+                <div class="col-12 text-center py-5">
+                    <p class="fs-4 text-muted"><i class="bi bi-cup-slash me-2"></i>No encontramos productos disponibles en esta categoría.</p>
+                </div>
+            `;
+            return;
+        }
+
+        container.innerHTML = '';
+        filtered.forEach(prod => {
+            const isAgotado = (prod.estado === 'Agotado') || (prod.insumo && prod.insumo.stockActual <= 0);
+            const stockActual = prod.insumo ? prod.insumo.stockActual : 0;
+            const unidad = prod.insumo ? prod.insumo.unidadMedida : 'unid';
+
+            let stockBadge = '';
+            if (isAgotado) {
+                stockBadge = '<span class="badge bg-danger stock-pill"><i class="bi bi-x-circle me-1"></i>Agotado</span>';
+            } else if (stockActual <= (prod.insumo ? prod.insumo.stockMinimo : 2)) {
+                stockBadge = `<span class="badge bg-warning text-dark stock-pill"><i class="bi bi-exclamation-circle me-1"></i>Últimas ${stockActual} ${unidad}</span>`;
+            } else {
+                stockBadge = `<span class="badge bg-success stock-pill"><i class="bi bi-check2-circle me-1"></i>En Stock (${stockActual} ${unidad})</span>`;
+            }
+
+            const card = document.createElement('div');
+            card.className = 'col-lg-4 col-md-6 col-sm-12';
+            card.innerHTML = `
+                <div class="product-card p-3 ${isAgotado ? 'agotado' : ''}">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="badge-category">${prod.categoria || 'Especialidad'}</span>
+                        ${stockBadge}
+                    </div>
+                    <h5 class="fw-bold mb-1">${prod.nombre}</h5>
+                    <p class="text-muted small mb-3">
+                        <i class="bi bi-bag-check me-1"></i>Insumo: ${prod.insumo ? prod.insumo.nombre : 'General'}
+                    </p>
+                    <div class="mt-auto pt-2 border-top d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="price-tag">$${prod.precio.toFixed(2)}</span>
+                        </div>
+                        <div>
+                            <button class="btn ${isAgotado ? 'btn-secondary' : 'btn-cafe'} px-3" 
+                                    ${isAgotado ? 'disabled' : ''} 
+                                    onclick="openOrderModal(${prod.idProducto})">
+                                ${isAgotado ? '<i class="bi bi-slash-circle me-1"></i>Agotado' : '<i class="bi bi-cart-plus me-1"></i>Pedir ahora'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            container.appendChild(card);
+        });
+    }
+
+    function openOrderModal(productId) {
+        const prod = allProducts.find(p => p.idProducto === productId);
+        if (!prod) return;
+
+        currentSelectedProduct = prod;
+
+        document.getElementById('modalProdNombre').textContent = prod.nombre;
+        document.getElementById('modalProdCategoria').textContent = prod.categoria || 'General';
+        document.getElementById('modalProdPrecio').textContent = `$${prod.precio.toFixed(2)}`;
+
+        const stock = prod.insumo ? prod.insumo.stockActual : 0;
+        const unidad = prod.insumo ? prod.insumo.unidadMedida : 'unid';
+        document.getElementById('modalStockText').textContent = `${stock} ${unidad}`;
+
+        const qtyInput = document.getElementById('orderQty');
+        qtyInput.value = 1;
+        qtyInput.max = stock;
+
+        document.getElementById('orderClient').value = '';
+        document.getElementById('orderNotes').value = '';
+
+        hideModalError();
+        updateOrderTotal();
+
+        orderModalInstance.show();
+    }
+
+    function updateOrderTotal() {
+        if (!currentSelectedProduct) return;
+        const qtyInput = document.getElementById('orderQty');
+        let qty = parseInt(qtyInput.value) || 1;
+        if (qty < 1) {
+            qty = 1;
+            qtyInput.value = 1;
+        }
+
+        const maxStock = currentSelectedProduct.insumo ? currentSelectedProduct.insumo.stockActual : 0;
+        if (qty > maxStock) {
+            showModalError(`Stock insuficiente. Solo quedan ${maxStock} unidades disponibles.`);
+        } else {
+            hideModalError();
+        }
+
+        const total = currentSelectedProduct.precio * qty;
+        document.getElementById('orderTotal').textContent = `$${total.toFixed(2)}`;
+    }
+
+    function showModalError(msg) {
+        const alert = document.getElementById('modalErrorAlert');
+        document.getElementById('modalErrorMsg').textContent = msg;
+        alert.classList.remove('d-none');
+    }
+
+    function hideModalError() {
+        document.getElementById('modalErrorAlert').classList.add('d-none');
+    }
+
+    async function submitOrder(e) {
+        e.preventDefault();
+        if (!currentSelectedProduct) return;
+
+        const qty = parseInt(document.getElementById('orderQty').value) || 1;
+        const cliente = document.getElementById('orderClient').value.trim();
+        const notas = document.getElementById('orderNotes').value.trim();
+        const btnSubmit = document.getElementById('btnConfirmOrder');
+
+        // Validar stock antes de enviar
+        const stockActual = currentSelectedProduct.insumo ? currentSelectedProduct.insumo.stockActual : 0;
+        if (qty > stockActual) {
+            showModalError(`¡No hay stock suficiente! Solo hay ${stockActual} disponibles.`);
+            return;
+        }
+
+        btnSubmit.disabled = true;
+        btnSubmit.innerHTML = `<span class="spinner-border spinner-border-sm me-2" role="status"></span>Procesando...`;
+
+        try {
+            const response = await fetch('/api/pedidos', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    idProducto: currentSelectedProduct.idProducto,
+                    cantidad: qty,
+                    cliente: cliente || 'Cliente Mostrador',
+                    notas: notas
+                })
+            });
+
+            const result = await response.json();
+
+            if (response.ok && result.success) {
+                // Cerrar modal de pedido
+                orderModalInstance.hide();
+
+                // Mostrar modal de éxito
+                document.getElementById('successOrderId').textContent = result.pedido.idPedido;
+                document.getElementById('successOrderProduct').textContent = currentSelectedProduct.nombre;
+                document.getElementById('successOrderQty').textContent = `${result.pedido.cantidad} unidad(es)`;
+                document.getElementById('successOrderTotal').textContent = `$${result.pedido.total.toFixed(2)}`;
+                
+                successModalInstance.show();
+
+                // Recargar menú de inmediato para reflejar el descuento de stock
+                await loadMenu();
+            } else {
+                // Avisar al usuario que no hay stock suficiente u otro error
+                const errMsg = result.mensaje || result.error || 'Ocurrió un error al procesar el pedido.';
+                showModalError(errMsg);
+            }
+        } catch (error) {
+            console.error('Error al realizar pedido:', error);
+            showModalError('Error de comunicación con el servidor. Intente nuevamente.');
+        } finally {
+            btnSubmit.disabled = false;
+            btnSubmit.innerHTML = `<i class="bi bi-check-circle me-1"></i> Confirmar Pedido`;
+        }
+    }
+</script>
+
+</body>
+</html>

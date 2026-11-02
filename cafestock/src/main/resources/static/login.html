@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Acceso al Sistema - CafeStock</title>
+    <!-- Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <style>
+        :root {
+            --cafe-dark: #2c1a0e;
+            --cafe-medium: #543d2b;
+            --cafe-gold: #c89666;
+            --cafe-accent: #b85d19;
+        }
+
+        body {
+            background: linear-gradient(135deg, #1e1107 0%, #3e2617 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .login-card {
+            background: #ffffff;
+            border-radius: 1.25rem;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.1);
+            overflow: hidden;
+            max-width: 440px;
+            width: 100%;
+        }
+
+        .login-header {
+            background-color: var(--cafe-dark);
+            color: #fff;
+            padding: 2rem 1.5rem;
+            text-align: center;
+        }
+
+        .btn-cafe {
+            background-color: var(--cafe-accent);
+            border-color: var(--cafe-accent);
+            color: #fff;
+            font-weight: 600;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            transition: all 0.2s;
+        }
+
+        .btn-cafe:hover {
+            background-color: #9c4c11;
+            border-color: #9c4c11;
+            color: #fff;
+            transform: translateY(-1px);
+        }
+
+        .credential-box {
+            background-color: #f8fafc;
+            border: 1px dashed #cbd5e1;
+            border-radius: 0.5rem;
+            padding: 0.75rem;
+            font-size: 0.85rem;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-5 col-sm-10">
+            <div class="login-card shadow-lg">
+                <div class="login-header">
+                    <span class="fs-1 d-block mb-2">☕</span>
+                    <h3 class="fw-bold mb-1">Cafe<span style="color: var(--cafe-gold);">Stock</span></h3>
+                    <p class="text-white-50 mb-0 small">Panel de Administración & Control de Stock</p>
+                </div>
+                
+                <div class="card-body p-4">
+                    <form id="loginForm">
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold text-muted">Correo electrónico</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light"><i class="bi bi-envelope"></i></span>
+                                <input type="email" class="form-control" id="correo" value="admin@cafestock.com" placeholder="nombre@correo.com" required>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold text-muted">Contraseña</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light"><i class="bi bi-key"></i></span>
+                                <input type="password" class="form-control" id="contrasena" value="admin123" placeholder="••••••••" required>
+                            </div>
+                        </div>
+
+                        <!-- Mensaje de error -->
+                        <div id="error-msg" class="alert alert-danger py-2 small d-none" role="alert">
+                            <i class="bi bi-exclamation-triangle-fill me-1"></i> Credenciales incorrectas. Verifique su correo y contraseña.
+                        </div>
+
+                        <button type="submit" class="btn btn-cafe w-100 mb-3" id="btnLogin">
+                            <i class="bi bi-box-arrow-in-right me-1"></i> Iniciar Sesión
+                        </button>
+                    </form>
+
+                    <!-- Credenciales de prueba -->
+                    <div class="credential-box mb-3">
+                        <div class="fw-bold text-dark mb-1"><i class="bi bi-info-circle me-1 text-primary"></i> Cuentas demostrativas:</div>
+                        <div class="d-flex justify-content-between text-muted">
+                            <span><strong>Admin:</strong> admin@cafestock.com</span>
+                            <code>admin123</code>
+                        </div>
+                        <div class="d-flex justify-content-between text-muted">
+                            <span><strong>Barista:</strong> juan@cafestock.com</span>
+                            <code>barista123</code>
+                        </div>
+                        <small class="d-block text-muted mt-1 text-center" style="font-size: 0.75rem;">
+                            🔒 Contraseñas encriptadas con <strong>BCrypt</strong> en base de datos.
+                        </small>
+                    </div>
+
+                    <div class="text-center">
+                        <a href="index.html" class="text-decoration-none text-muted small">
+                            <i class="bi bi-arrow-left me-1"></i> Volver al Menú Público
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const correo = document.getElementById('correo').value.trim();
+        const contrasena = document.getElementById('contrasena').value;
+        const errorMsg = document.getElementById('error-msg');
+        const btnLogin = document.getElementById('btnLogin');
+
+        errorMsg.classList.add('d-none');
+        btnLogin.disabled = true;
+        btnLogin.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span>Verificando...`;
+
+        try {
+            const res = await fetch('/api/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ correo, contrasena })
+            });
+
+            if (res.ok) {
+                const user = await res.json();
+                localStorage.setItem('user', JSON.stringify(user));
+                window.location.href = 'admin.html';
+            } else {
+                errorMsg.classList.remove('d-none');
+            }
+        } catch (error) {
+            console.error(error);
+            errorMsg.textContent = 'Error de conexión con el servidor.';
+            errorMsg.classList.remove('d-none');
+        } finally {
+            btnLogin.disabled = false;
+            btnLogin.innerHTML = `<i class="bi bi-box-arrow-in-right me-1"></i> Iniciar Sesión`;
+        }
+    });
+</script>
+
+</body>
+</html>
